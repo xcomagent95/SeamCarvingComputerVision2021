@@ -417,14 +417,19 @@ def fullSobelFilter(imagePath):
 
 def findVerticalSeams(imagePath):
     image = Image.open(imagePath)
-    imageArray = np.asarray(image).copy()
     
     height = image.height-2
     width = image.width-2
+    print(height)
     
     sobelFilteredImageArray = fullSobelFilter(imagePath)
     energyMap = []
-    #initialize seams
+    
+    firstRow = []
+    for i in range (0, width):
+       firstRow.append(sobelFilteredImageArray[0][i][0])
+    energyMap.append(firstRow)
+    
     for i in range (1, height):
         row = []
         for j in range (0, width):
@@ -442,13 +447,9 @@ def findVerticalSeams(imagePath):
                     values.append(sobelFilteredImageArray[i-1][j+1][0])
                     values.append(sobelFilteredImageArray[i-1][j-1][0])
                 row.append(sobelFilteredImageArray[i][j][0] + min(values))
-                    
         energyMap.append(row)
-    print(energyMap)
+        
+    print("Height:", height)
+    print("Width:", width)
+    print(len(energyMap))
     
-    
-#-----------------------------------------------------------------------------
-#arrayToImage(gaussFilter("images/lena.png"))
-#arrayToImage(fullPrewittFilter("images/test2.jpg"))
-#arrayToImage(fullSobelFilter("images/lena.png"))
-findVerticalSeams("images/lena.png")
