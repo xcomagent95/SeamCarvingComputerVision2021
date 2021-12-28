@@ -21,12 +21,25 @@ class seam:
         
     def addPosition(self, position):
         self.positions.append(position)
+    
+    def getLastPosition(self):
+        return self.positions[len(self.positions)-1]
+    
+    def printSeam(self):
+        for i in range(0, len(self.positions)-1):
+            print("x: ", self.positions[i].x)
+            print("y: ", self.positions[i].y)
+            print("value: ", self.positions[i].value)
+            print("----------------")
         
 class position:
     def __init__(self, x, y, value):
         self.x = x
         self.y = y
         self.value = value
+    
+    def printPosition(self):
+        print("X:", self.x, " Y: ", self.y, " Value: ", self.value)
 
 def arrayToImage(imageArray):
     image = Image.fromarray(imageArray, mode='RGB')
@@ -415,12 +428,58 @@ def fullSobelFilter(imagePath):
     sobelFilteredImageArray = np.delete(sobelFilteredImageArray, width-2, 1)
     return sobelFilteredImageArray
 
+def minimalSeam(energyMap):
+    
+    height = len(energyMap)
+    width = len(energyMap[0])
+    
+    s = seam()
+    initialMinimum = min(energyMap[0])
+    initialMinimumY = energyMap[0].index(initialMinimum)
+    
+    initialPosition = position(0, initialMinimumY, initialMinimum)
+    
+    s.addPosition(initialPosition)
+    
+    for i in range (1, height):
+        index = height-i
+        values = []
+        p = s.getLastPosition()
+        #p.printPosition()
+        if(p.y == 0):
+           p1 = position(index, p.y, energyMap[index][p.y]) 
+           p2 = position(index, p.y+1, energyMap[index][p.y+1]) 
+           values.append(p1)
+           values.append(p2)
+        elif(p.y == width-1):
+            p1 = position(index, p.y, energyMap[index][p.y]) 
+            p2 = position(index, p.y-1, energyMap[index][p.y-1]) 
+            values.append(p1)
+            values.append(p2)
+        else:
+            p1 = position(index, p.y, energyMap[index][p.y]) 
+            p2 = position(index, p.y-1, energyMap[index][p.y-1]) 
+            p3 = position(index, p.y+1, energyMap[index][p.y+1]) 
+            values.append(p1)
+            values.append(p2)
+            values.append(p3)
+        
+        minValue = values[0].value
+        minY = values[0].y
+        for i in range(1, len(values)-1):
+            if(values[i].value < minValue):
+                minValue = values[i].value
+                minY = values[i].y
+        pNew = position(index, minY, minValue)
+        s.addPosition(pNew)
+    s.printSeam()
+    
+
 def findVerticalSeams(imagePath):
     image = Image.open(imagePath)
     
     height = image.height-2
     width = image.width-2
-    print(height)
     
     sobelFilteredImageArray = fullSobelFilter(imagePath)
     energyMap = []
@@ -448,8 +507,6 @@ def findVerticalSeams(imagePath):
                     values.append(sobelFilteredImageArray[i-1][j-1][0])
                 row.append(sobelFilteredImageArray[i][j][0] + min(values))
         energyMap.append(row)
-        
-    print("Height:", height)
-    print("Width:", width)
-    print(len(energyMap))
+    minimalSeam(energyMap)
+    
     
