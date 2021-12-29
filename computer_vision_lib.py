@@ -434,14 +434,14 @@ def minimalSeam(energyMap):
     width = len(energyMap[0])
     
     s = seam()
-    initialMinimum = min(energyMap[0])
-    initialMinimumY = energyMap[0].index(initialMinimum)
+    initialMinimum = min(energyMap[height-1])
+    initialMinimumY = energyMap[height-1].index(initialMinimum)
     
-    initialPosition = position(0, initialMinimumY, initialMinimum)
+    initialPosition = position(height, initialMinimumY, initialMinimum)
     
     s.addPosition(initialPosition)
     
-    for i in range (1, height):
+    for i in range (1, height+2):
         index = height-i
         values = []
         p = s.getLastPosition()
@@ -466,13 +466,14 @@ def minimalSeam(energyMap):
         
         minValue = values[0].value
         minY = values[0].y
-        for i in range(1, len(values)-1):
+        for i in range(0, len(values)):
             if(values[i].value < minValue):
                 minValue = values[i].value
                 minY = values[i].y
         pNew = position(index, minY, minValue)
         s.addPosition(pNew)
-    s.printSeam()
+    
+    return s
     
 
 def findVerticalSeams(imagePath):
@@ -507,6 +508,9 @@ def findVerticalSeams(imagePath):
                     values.append(sobelFilteredImageArray[i-1][j-1][0])
                 row.append(sobelFilteredImageArray[i][j][0] + min(values))
         energyMap.append(row)
-    minimalSeam(energyMap)
+    s = minimalSeam(energyMap)
+    for i in range(0, len(s.positions)-1):
+        print(s.positions[i].x, " / ", s.positions[i].y)
+
     
     
