@@ -351,6 +351,30 @@ def sobelHorizontalFilter(imagePath):
             sobelHorizontalFilteredImageArray[i][j][1] = abs(value)
             sobelHorizontalFilteredImageArray[i][j][2] = abs(value) 
 
+    for i in range(1, height-1):
+        value1 = imageArray[i-1][2][0]+(2*imageArray[i-1][0][0])+imageArray[i-1][1][0]-imageArray[i+1][2][0]-(2*imageArray[i+1][0][0])-imageArray[i+1][1][0]
+        value2 = imageArray[i-1][width-3][0]+(2*imageArray[i-1][width-1][0])+imageArray[i-1][width-2][0]-imageArray[i+1][width-3][0]-(2*imageArray[i+1][width-1][0])-imageArray[i+1][width-2][0]
+    
+        sobelHorizontalFilteredImageArray[i][0][0] = abs(value1)
+        sobelHorizontalFilteredImageArray[i][0][1] = abs(value1)
+        sobelHorizontalFilteredImageArray[i][0][2] = abs(value1) 
+            
+        sobelHorizontalFilteredImageArray[i][width-1][0] = abs(value2)
+        sobelHorizontalFilteredImageArray[i][width-1][1] = abs(value2)
+        sobelHorizontalFilteredImageArray[i][width-1][2] = abs(value2) 
+        
+    for i in range(1, width-1):
+        value1 = imageArray[0][i-1][0]+(2*imageArray[0][i][0])+imageArray[0][i+1][0]-imageArray[1][i-1][0]-(2*imageArray[1][i][0])-imageArray[1][i+1][0]
+        value2 = imageArray[height-1][i-1][0]+(2*imageArray[height-1][i][0])+imageArray[height-1][i+1][0]-imageArray[height-2][i-1][0]-(2*imageArray[height-2][i][0])-imageArray[height-2][i+1][0]
+        
+        sobelHorizontalFilteredImageArray[0][i][0] = abs(value1)
+        sobelHorizontalFilteredImageArray[0][i][1] = abs(value1)
+        sobelHorizontalFilteredImageArray[0][i][2] = abs(value1) 
+            
+        sobelHorizontalFilteredImageArray[height-1][i][0] = abs(value2)
+        sobelHorizontalFilteredImageArray[height-1][i][1] = abs(value2)
+        sobelHorizontalFilteredImageArray[height-1][i][2] = abs(value2) 
+        
     return sobelHorizontalFilteredImageArray
         
 def sobelVerticalFilter(imagePath):
@@ -381,6 +405,30 @@ def sobelVerticalFilter(imagePath):
             sobelVerticalFilteredImageArray[i][j][0] = abs(value)
             sobelVerticalFilteredImageArray[i][j][1] = abs(value)
             sobelVerticalFilteredImageArray[i][j][2] = abs(value) 
+            
+    for i in range(1, height-1):
+        value1 = -imageArray[i-1][0][0]+imageArray[i-1][2][0]-(2*imageArray[i][0][0])+(2*imageArray[i][2][0])-imageArray[i+1][0][0]+imageArray[i+1][2][0]
+        value2 = -imageArray[i-1][width-1][0]+imageArray[i-1][width-3][0]-(2*imageArray[i][width-1][0])+(2*imageArray[i][width-3][0])-imageArray[i+1][width-1][0]+imageArray[i+1][width-3][0]
+    
+        sobelVerticalFilteredImageArray[i][0][0] = abs(value1)
+        sobelVerticalFilteredImageArray[i][0][1] = abs(value1)
+        sobelVerticalFilteredImageArray[i][0][2] = abs(value1) 
+            
+        sobelVerticalFilteredImageArray[i][width-1][0] = abs(value2)
+        sobelVerticalFilteredImageArray[i][width-1][1] = abs(value2)
+        sobelVerticalFilteredImageArray[i][width-1][2] = abs(value2) 
+        
+    for i in range(1, width-1):
+        value1 = -imageArray[0][i-1][0]+imageArray[1][i+1][0]-(2*imageArray[1][i-1][0])+(2*imageArray[1][i+1][0])-imageArray[2][i-1][0]+imageArray[2][i+1][0]
+        value2 = -imageArray[height-1][i-1][0]+imageArray[height-1][i+1][0]-(2*imageArray[height-2][i-1][0])+(2*imageArray[height-2][i+1][0])-imageArray[height-3][i-1][0]+imageArray[height-3][i+1][0]
+        
+        sobelVerticalFilteredImageArray[0][i][0] = abs(value1)
+        sobelVerticalFilteredImageArray[0][i][1] = abs(value1)
+        sobelVerticalFilteredImageArray[0][i][2] = abs(value1) 
+            
+        sobelVerticalFilteredImageArray[height-1][i][0] = abs(value2)
+        sobelVerticalFilteredImageArray[height-1][i][1] = abs(value2)
+        sobelVerticalFilteredImageArray[height-1][i][2] = abs(value2) 
 
     return sobelVerticalFilteredImageArray
 
@@ -422,10 +470,6 @@ def fullSobelFilter(imagePath):
             sobelFilteredImageArray[i][j][1] = horizontalSobelArray[i][j][1] + verticalSobelArray[i][j][1]
             sobelFilteredImageArray[i][j][2] = horizontalSobelArray[i][j][2] + verticalSobelArray[i][j][2]
     
-    sobelFilteredImageArray = np.delete(sobelFilteredImageArray, 0, 0)
-    sobelFilteredImageArray = np.delete(sobelFilteredImageArray, height-2, 0)
-    sobelFilteredImageArray = np.delete(sobelFilteredImageArray, 0, 1)
-    sobelFilteredImageArray = np.delete(sobelFilteredImageArray, width-2, 1)
     return sobelFilteredImageArray
 
 def minimalSeam(energyMap):
@@ -476,11 +520,11 @@ def minimalSeam(energyMap):
     return s
     
 
-def removeVerticalSeams(imagePath):
+def findVerticalSeam(imagePath):
     image = Image.open(imagePath)
     
-    height = image.height-2
-    width = image.width-2
+    height = image.height
+    width = image.width
     
     sobelFilteredImageArray = fullSobelFilter(imagePath)
     energyMap = []
@@ -511,22 +555,42 @@ def removeVerticalSeams(imagePath):
 
     seam = minimalSeam(energyMap)
     
+    return seam
+
+def removeVerticalSeam(imagePath, seam):
+    
+    image = Image.open(imagePath)
+    
+    height = image.height
+    width = image.width
+    
     imageArray = np.asarray(image).copy()    
     
-    imageArray = np.delete(imageArray, 0, 0)
-    imageArray = np.delete(imageArray, height-2, 0)
-    imageArray = np.delete(imageArray, 0, 1)
-    imageArray = np.delete(imageArray, width-2, 1)
-    
-    newImageArray = []
+    #imageArray = np.delete(imageArray, 0, 0)
+    #imageArray = np.delete(imageArray, height-2, 0)
+    #imageArray = np.delete(imageArray, 0, 1)
+    #imageArray = np.delete(imageArray, width-2, 1)
+    print(type(imageArray))
+    newImageArray = imageArray.copy()
+    newImageArray = np.delete(newImageArray, width-3, 1)
+    print(len(newImageArray))
+    print(len(newImageArray[0]))
     for i in range (0, len(seam.positions)):
         row = imageArray[i-1]
         newRow = np.delete(row, seam.positions[i].y, 0)
-        newImageArray.append(newRow)
-    print(len(newImageArray))
-    print(len(newImageArray[0]))
+        newImageArray[i] = newRow
+    
+    im = Image.fromarray(newImageArray)
+    im.save("seamCarvedImage.jpeg")
 
-
+def removeVerticalSeams(imagePath, numberOfSeams):
+    
+    for i in range(0, numberOfSeams):
+        s = findVerticalSeam(imagePath)
+        removeVerticalSeam(imagePath, s)
+        imagePath = "seamCarvedImage.jpeg"
+    
+    
     
             
             
