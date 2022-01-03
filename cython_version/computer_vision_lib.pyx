@@ -217,12 +217,12 @@ def minimalSeam(energyMap):
     return s
     
 
-def findSeam(imageArray, sobelFilteredImage):
+def findSeam(imageArray):
     
     height = len(imageArray)
     width = len(imageArray[0])
     
-    sobelFilteredImageArray = sobelFilteredImage
+    sobelFilteredImageArray = fullSobelFilter(imageArray)
     energyMap = []
     
     firstRow = []
@@ -277,17 +277,14 @@ def removeVerticalSeams(imagePath, numberOfSeams):
     result.save("test.jpeg")
     
 def removeHorizontalSeams(imagePath, numberOfSeams):
-    print("-- initialize --")
     imageArray = imageToArray(imagePath)
     imageArray.transpose()
-    sobelFilteredImageArray = fullSobelFilter(imageArray)
     
     for i in range(0, numberOfSeams):
         print("-- Searching for Seam ", i, " --")
-        s = findSeam(imageArray, sobelFilteredImageArray)
+        s = findSeam(imageArray)
         print("-- Seam ", i, " found --")   
         imageArray = removeVerticalSeam(imageArray, s)  
-        sobelFilteredImageArray = removeVerticalSeam(sobelFilteredImageArray, s)  
         print("-- Seam ", i, " removed --")   
     imageArray.transpose()
     result = Image.fromarray(imageArray)
