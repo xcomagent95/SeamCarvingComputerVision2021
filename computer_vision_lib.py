@@ -4,12 +4,12 @@ Created on Sun Oct 24 18:14:01 2021
 
 @author: Alexander Pilz
 """
-import cython
-print("--> cython imported")
 from PIL import Image
 print("--> PIL.Image imported")
 import numpy as np
 print("--> numpy imported")
+import random
+print("--> random imported")
 
 class seam:
     def __init__(self):
@@ -47,6 +47,13 @@ def imageToArray(imagePath):
     imageArray = np.asarray(image).copy()
     
     return imageArray
+
+def imageToArray90(imagePath):
+    image = Image.open(imagePath)
+    imageArray = np.asarray(image).copy()
+    imageArrayRotated = np.rot90(imageArray)
+    
+    return imageArrayRotated
 
 def sobelHorizontalFilter(imageArray):
     #Image Info
@@ -215,14 +222,59 @@ def minimalSeam(energyMap):
         s.addPosition(pNew)
     
     return s
-    
 
-def findSeam(imageArray, sobelFilteredImage):
+def randomSeam(energyMap):
+    
+    height = len(energyMap)
+    width = len(energyMap[0])
+    
+    s = seam()
+    initialMinimum = energyMap[height-1][random.randint(0, width-1)]
+    initialMinimumY = energyMap[height-1].index(initialMinimum)
+    
+    initialPosition = position(height, initialMinimumY, initialMinimum)
+    
+    s.addPosition(initialPosition)
+    
+    for i in range (1, height):
+        index = height-i
+        values = []
+        p = s.getLastPosition()
+        if(p.y == 0):
+           p1 = position(index, p.y, energyMap[index][p.y]) 
+           p2 = position(index, p.y+1, energyMap[index][p.y+1]) 
+           values.append(p1)
+           values.append(p2)
+        elif(p.y == width-1):
+            p1 = position(index, p.y, energyMap[index][p.y]) 
+            p2 = position(index, p.y-1, energyMap[index][p.y-1]) 
+            values.append(p1)
+            values.append(p2)
+        else:
+            p1 = position(index, p.y, energyMap[index][p.y]) 
+            p2 = position(index, p.y-1, energyMap[index][p.y-1]) 
+            p3 = position(index, p.y+1, energyMap[index][p.y+1]) 
+            values.append(p1)
+            values.append(p2)
+            values.append(p3)
+        
+        minValue = values[0].value
+        minY = values[0].y
+        for i in range(0, len(values)):
+            if(values[i].value < minValue):
+                minValue = values[i].value
+                minY = values[i].y
+        pNew = position(index, minY, minValue)
+        s.addPosition(pNew)
+    
+    return s
+
+def findMinimalSeam(imageArray, sobelFilteredImage):
     
     height = len(imageArray)
     width = len(imageArray[0])
     
-    sobelFilteredImageArray = sobelFilteredImage
+    sobelFilteredImageArray = sobelFilteredImage.copy()
     energyMap = []
     
     firstRow = []
@@ -253,6 +305,42 @@ def findSeam(imageArray, sobelFilteredImage):
     
     return seam
 
+def findRandomSeam(imageArray, sobelFilteredImage):
+    
+    height = len(sobelFilteredImage)
+    width = len(sobelFilteredImage[0])
+    
+    sobelFilteredImageArray = sobelFilteredImage.copy()
+    energyMap = []
+    
+    firstRow = []
+    for i in range (0, width):
+       firstRow.append(sobelFilteredImageArray[0][i][0])
+    energyMap.append(firstRow)
+    
+    for i in range (1, height-1):
+        row = []
+        for j in range (0, width):
+                if j == 0:
+                    values = []
+                    values.append(sobelFilteredImageArray[i-1][j][0])
+                    values.append(sobelFilteredImageArray[i-1][j+1][0])
+                elif j == width-1:
+                    values = []
+                    values.append(sobelFilteredImageArray[i-1][j][0])
+                    values.append(sobelFilteredImageArray[i-1][j-1][0])
+                else:
+                    values = []
+                    values.append(sobelFilteredImageArray[i-1][j][0])
+                    values.append(sobelFilteredImageArray[i-1][j+1][0])
+                    values.append(sobelFilteredImageArray[i-1][j-1][0])
+                row.append(sobelFilteredImageArray[i][j][0] + min(values))
+        energyMap.append(row)
+
+    seam = randomSeam(energyMap)
+    
+    return seam
+
 def removeVerticalSeam(imageArray, seam):
     
     height = len(imageArray)
@@ -267,33 +355,59 @@ def removeVerticalSeam(imageArray, seam):
     
     return newImageArray
 
+def addVerticalSeam(imageArray, seam):
+    
+    height = len(imageArray)
+    width = len(imageArray[0])
+    
+    newImageArray = imageArray.copy()
+    newImageArray.resize((height, width+1, 3))
+    for i in range (0, height-1):
+        row = imageArray[i]
+        pos = seam.positions[i].y+1
+        newRow = np.insert(row, pos, imageArray[i][seam.positions[i].y], 0)
+        newImageArray[i] = newRow
+    
+    
+    return newImageArray
+    
+
 def removeVerticalSeams(imagePath, numberOfSeams):
     imageArray = imageToArray(imagePath)
-    for i in range(0, numberOfSeams):
-        s = findSeam(imageArray)
-        imageArray = removeVerticalSeam(imageArray, s)
-        
-    result = Image.fromarray(imageArray)
-    result.save("test.jpeg")
-    
-def removeHorizontalSeams(imagePath, numberOfSeams):
-    print("-- initialize --")
-    imageArray = imageToArray(imagePath)
-    imageArray.transpose()
     sobelFilteredImageArray = fullSobelFilter(imageArray)
     
     for i in range(0, numberOfSeams):
-        print("-- Searching for Seam ", i, " --")
-        s = findSeam(imageArray, sobelFilteredImageArray)
-        print("-- Seam ", i, " found --")   
+        s = findMinimalSeam(imageArray, sobelFilteredImageArray)
         imageArray = removeVerticalSeam(imageArray, s)  
         sobelFilteredImageArray = removeVerticalSeam(sobelFilteredImageArray, s)  
-        print("-- Seam ", i, " removed --")   
-    imageArray.transpose()
+        
     result = Image.fromarray(imageArray)
-    result.save("test.jpeg")    
+    result.save("vertical_removed.jpeg")
+
+def removeHorizontalSeams(imagePath, numberOfSeams):
+    imageArray = imageToArray90(imagePath)
+    sobelFilteredImageArray = fullSobelFilter(imageArray)
+   
+    for i in range(0, numberOfSeams):
+        s = findMinimalSeam(imageArray, sobelFilteredImageArray)
+        imageArray = removeVerticalSeam(imageArray, s)  
+        sobelFilteredImageArray = removeVerticalSeam(sobelFilteredImageArray, s)  
+        
+    imageArrayRotated = np.rot90(imageArray, 3)
+    result = Image.fromarray(imageArrayRotated)
+    result.save("horizontal_removed.jpeg")
     
-            
+def addVerticalSeams(imagePath, numberOfSeams):
+    imageArray = imageToArray(imagePath)
+    sobelFilteredImageArray = fullSobelFilter(imageArray) 
+    
+    for i in range(0, numberOfSeams):
+        random.seed(i)
+        s = findRandomSeam(imageArray, sobelFilteredImageArray)
+        imageArray = addVerticalSeam(imageArray, s)  
+        
+    result = Image.fromarray(imageArray)
+    result.save("vertical_added.jpeg")
             
         
 
