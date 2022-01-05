@@ -301,3 +301,81 @@ def fullPrewittFilter(imagePath):
             prewittFilteredImageArray[i][j][2] = horizontalPrewittArray[i][j][2] + verticalPrewittArray[i][j][2]
 
     return prewittFilteredImageArray
+
+#####might be disfunctional
+def addVerticalSeams(imagePath, numberOfSeams):
+    imageArray = imageToArray(imagePath)
+    sobelFilteredImageArray = fullSobelFilter(imageArray) 
+    
+    for i in range(0, numberOfSeams):
+        random.seed(i)
+        s = findRandomSeam(imageArray, sobelFilteredImageArray)
+        imageArray = addVerticalSeam(imageArray, s)  
+        
+    result = Image.fromarray(imageArray)
+    result.save("vertical_added.jpeg")
+
+def addHorizontalSeams(imagePath, numberOfSeams):
+    imageArray = imageToArray90(imagePath)
+    sobelFilteredImageArray = fullSobelFilter(imageArray) 
+    
+    for i in range(0, numberOfSeams):
+        random.seed(i)
+        s = findRandomSeam(imageArray, sobelFilteredImageArray)
+        imageArray = addVerticalSeam(imageArray, s)  
+        
+    imageArrayRotated = np.rot90(imageArray, 3)
+    result = Image.fromarray(imageArrayRotated)
+    result.save("horizontal_added.jpeg")          
+
+def addVerticalSeam(imageArray, seam):
+    
+    height = len(imageArray)
+    width = len(imageArray[0])
+    
+    newImageArray = imageArray.copy()
+    newImageArray.resize((height, width+1, 3))
+    for i in range (0, height-1):
+        row = imageArray[i]
+        pos = seam.positions[i].y+1
+        newRow = np.insert(row, pos, imageArray[i][seam.positions[i].y], 0)
+        newImageArray[i] = newRow
+    
+    
+    return newImageArray
+
+def findRandomSeam(imageArray, sobelFilteredImage):
+    
+    height = len(sobelFilteredImage)
+    width = len(sobelFilteredImage[0])
+    
+    sobelFilteredImageArray = sobelFilteredImage.copy()
+    energyMap = []
+    
+    firstRow = []
+    for i in range (0, width):
+       firstRow.append(sobelFilteredImageArray[0][i][0])
+    energyMap.append(firstRow)
+    
+    for i in range (1, height-1):
+        row = []
+        for j in range (0, width):
+                if j == 0:
+                    values = []
+                    values.append(sobelFilteredImageArray[i-1][j][0])
+                    values.append(sobelFilteredImageArray[i-1][j+1][0])
+                elif j == width-1:
+                    values = []
+                    values.append(sobelFilteredImageArray[i-1][j][0])
+                    values.append(sobelFilteredImageArray[i-1][j-1][0])
+                else:
+                    values = []
+                    values.append(sobelFilteredImageArray[i-1][j][0])
+                    values.append(sobelFilteredImageArray[i-1][j+1][0])
+                    values.append(sobelFilteredImageArray[i-1][j-1][0])
+                row.append(sobelFilteredImageArray[i][j][0] + min(values))
+        energyMap.append(row)
+
+    seam = randomSeam(energyMap)
+    
+    return seam

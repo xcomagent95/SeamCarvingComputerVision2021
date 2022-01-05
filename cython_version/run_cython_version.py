@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan  3 20:02:48 2022
-
-@author: Alexander Pilz
-"""
-import numpy as np
 import computer_vision_lib as cvl
-cvl.removeVerticalSeams('images/mann_auf_pferd.jpg', 10)
+print("--> functions imported")
+
+#-----------------------------------------------------------------------------
+cvl.removeVerticalSeams("images/castle.jpg", 20)
+print("--> vertical seam-removal done")
+cvl.removeHorizontalSeams("images/castle.jpg", 20)
+print("--> horizontal seam-removal done")
