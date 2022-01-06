@@ -379,3 +379,49 @@ def findRandomSeam(imageArray, sobelFilteredImage):
     seam = randomSeam(energyMap)
     
     return seam
+
+def randomSeam(energyMap):
+    
+    height = len(energyMap)
+    width = len(energyMap[0])
+    
+    s = seam()
+    initialMinimum = energyMap[height-1][random.randint(0, width-1)]
+    initialMinimumY = energyMap[height-1].index(initialMinimum)
+    
+    initialPosition = position(height, initialMinimumY, initialMinimum)
+    
+    s.addPosition(initialPosition)
+    
+    for i in range (1, height):
+        index = height-i
+        values = []
+        p = s.getLastPosition()
+        if(p.y == 0):
+           p1 = position(index, p.y, energyMap[index][p.y]) 
+           p2 = position(index, p.y+1, energyMap[index][p.y+1]) 
+           values.append(p1)
+           values.append(p2)
+        elif(p.y == width-1):
+            p1 = position(index, p.y, energyMap[index][p.y]) 
+            p2 = position(index, p.y-1, energyMap[index][p.y-1]) 
+            values.append(p1)
+            values.append(p2)
+        else:
+            p1 = position(index, p.y, energyMap[index][p.y]) 
+            p2 = position(index, p.y-1, energyMap[index][p.y-1]) 
+            p3 = position(index, p.y+1, energyMap[index][p.y+1]) 
+            values.append(p1)
+            values.append(p2)
+            values.append(p3)
+        
+        minValue = values[0].value
+        minY = values[0].y
+        for i in range(0, len(values)):
+            if(values[i].value < minValue):
+                minValue = values[i].value
+                minY = values[i].y
+        pNew = position(index, minY, minValue)
+        s.addPosition(pNew)
+    
+    return s
