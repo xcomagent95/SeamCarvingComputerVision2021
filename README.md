@@ -1,1 +1,1 @@
-# seam_carving_computer_vision_2021
+# Seam carving - Computer Vision 2021
